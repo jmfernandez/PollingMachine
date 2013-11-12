@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>winners of ballot <%= poll_title %></title>
+		<link rel='stylesheet' href='/stylesheets/style.css' />
+	</head>
+	<body>
+		<div align="center"><h1>Winners and <i>losers</i> of the ballot <%= poll_title %></h1>
+		<table>
+			<tr>
+				<td height="100"><img class="auto" src='/poll/<%= poll_id %>/image' /></td>
+				<td><h3><%= poll_descr %></h3></td>
+			</tr>
+		</table>
+		<br />
+		<br />
+		<table>
+			<tr>
+				<th><b>Participant</b></th>
+				<th>Total score</th>
+				<th>Prize!</th>
+			</tr>
+			<% for(var rank_pos=0; rank_pos<winners.length; rank_pos++ ) { %>
+			<% var part = winners[rank_pos] %>
+			<tr>
+				<td class="resultsCell"><img id="<%= part.id_mail %>" class="auto" src='/user/<%= part.id_mail %>/image' alt="<%= part.name + ' ' + part.surname %>" title="<%= part.name + ' ' + part.surname %>" /><br /><%= part.name + ' ' + part.surname %></td>
+				<td class="resultsCell"><%= part.score %></td>
+				<td class="resultsCell">
+					<% if(rank_pos==0) { %>
+						<img src="/images/winner.png" class="auto" />
+					<% } else if(rank_pos == (winners.length - 1)){ %>
+						<img src="/images/loser.png" class="auto" />
+					<% } else { %>
+						&nbsp;
+					<% } %>
+				</td>
+			</tr>
+			<% } %>
+		</table>
+		</div>
+	</body>
+</html>
+

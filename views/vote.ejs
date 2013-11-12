@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Ballot <%= poll_title %></title>
+		<link rel='stylesheet' href='/stylesheets/style.css' />
+		<script>
+			var votes = {};
+			var votesLeft = <%= coloursArray.length %>;
+			function allowDrop(ev)
+			{
+				if(event.preventDefault){
+					event.preventDefault();
+				}else{
+					event.returnValue = false; // for IE as dont support preventDefault;
+				}
+			}
+			function drag(ev,vote_name)
+			{
+				ev.dataTransfer.setData("Text",vote_name);
+			}
+
+			function drop(ev)
+			{
+				if(event.preventDefault){
+					event.preventDefault();
+				}else{
+					event.returnValue = false; // for IE as dont support preventDefault;
+				}
+				
+				if(ev.target.id in votes)
+					return false;
+				
+				var data=ev.dataTransfer.getData("Text");
+				// alert(ev.target.id+' '+data);
+				votes[ev.target.id] = data;
+				votesLeft--;
+				
+				var cell = document.getElementById(data);
+				//cell.parentElement.removeChild(cell);
+				ev.target.appendChild(document.createElement('br'));
+				ev.target.appendChild(cell);
+				cell.draggable=false;
+				ev.target.ondrop=function() {return false;};
+			}
+			
+			function submitValidation(ev) {
+				if(votesLeft > 0) {
+					alert("Tienes que terminar la votación!!!!");
+					if(ev.preventDefault){
+						ev.preventDefault();
+					}else{
+						ev.returnValue = false; // for IE as dont support preventDefault;
+					}
+					
+					return false;
+				}
+				
+				for(var vote in votes) {
+					var value = document.createElement('input');
+					
+					value.setAttribute('type','hidden');
+					value.setAttribute('name',vote);
+					value.setAttribute('value',votes[vote]);
+					ev.target.appendChild(value);
+				}
+				
+				return true;
+			}
+		</script>
+	</head>
+	<body>
+		<div align="center"><h1>Welcome to the ballot <%= poll_title %></h1></div>
+		<h3><%= poll_descr %></h3>
+		<% if(!voter_voted) { %>
+		<form method="GET" action="/vote/submission" onsubmit="submitValidation(event)">
+		<div align="right"><input type="submit" name="submit" value="Submit!"></div>
+		<div align="center"><i>Los votos que vais a dar</i><br />
+		<table>
+			<% for(var i=0; i<coloursArray.length; i++) { %>
+				<% if(i % 4==0) { %>
+					<% if(i!=0) { %>
+						</tr>
+					<% } %>
+					<tr>
+				<% } %>
+				<td id="<%= coloursArray[i].name %>" class="imgCell" ondrop="drop(event)" ondragover="allowDrop(event)" bgcolor="<%= coloursArray[i].colour %>" onclick=""><%= coloursArray[i].name %></td>
+			<% } %>
+			<% if(coloursArray.length > 0) {%>
+				</tr>
+			<% } %>
+		</table>
+		</div>
+		<% } %>
+		<div align="center"><i>Los candidatos a votar (arrastrad hasta el voto)</i><br />
+		<table>
+			<% for(var i=0; i<cand.length; i++) { %>
+				<% if(i % 4==0) { %>
+					<% if(i!=0) { %>
+						</tr>
+					<% } %>
+					<tr>
+				<% } %>
+				<td class="imgCell" bgcolor="<%= (cand[i].vote)?colours[cand[i].vote].colour:'' %>"><img id="<%= cand[i].cand_id %>" draggable="true" ondrop="false" ondragstart="drag(event,'<%= cand[i].cand_id %>')" class="auto" src='/candidate/<%= cand[i].cand_id %>/image' alt="<%= cand[i].title %>" title="<%= cand[i].description %>" /><br /><%= cand[i].title %></td>
+			<% } %>
+			<% if(cand.length > 0) {%>
+				</tr>
+			<% } %>
+		</table>
+		</div>
+		<% if(!voter_voted) { %>
+		</form>
+		<% } %>
+	</body>
+</html>

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Results from ballot <%= poll_title %></title>
+		<link rel='stylesheet' href='/stylesheets/style.css' />
+	</head>
+	<body>
+		<div align="center"><h1>Results of the ballot <%= poll_title %></h1>
+		<table>
+			<tr>
+				<td height="100"><img class="auto" src='/poll/<%= poll_id %>/image' /></td>
+				<td><h3><%= poll_descr %></h3></td>
+			</tr>
+		</table>
+		<br />
+		<br />
+		<table>
+			<tr>
+				<th><b>Candidate</b></th>
+				<% for (var i=0; i<coloursArray.length; i++) { %>
+					<th><%= coloursArray[i].name %> <i>(<%= coloursArray[i].score %> point<%= (coloursArray[i].score!=1)?'s':'' %>)</i></th>
+				<% } %>
+				<th>Total score</th>
+			</tr>
+			<% for(var rank_pos=0; rank_pos<ranking.length; rank_pos++ ) { %>
+			<% var cand = ranking[rank_pos] %>
+			<tr>
+				<td class="resultsCell"><img id="<%= cand.cand_id %>" class="auto" src='/candidate/<%= cand.cand_id %>/image' alt="<%= cand.title %>" title="<%= cand.description %>" /><br /><%= cand.title %></td>
+				<% for (var i=0; i<coloursArray.length; i++) { %>
+					<td class="resultsCell" bgcolor="<%= coloursArray[i].colour %>"><%= (coloursArray[i].name in cand.votes)?cand.votes[coloursArray[i].name]:0 %></td>
+				<% } %>
+				<td class="resultsCell"><%= cand.score %>
+				<td><%= cand.description %></td>
+			</tr>
+			<% } %>
+		</table>
+		</div>
+	</body>
+</html>
+
