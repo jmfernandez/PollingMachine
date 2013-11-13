@@ -16,8 +16,9 @@ exports.submission = function(req,res) {
 	
 	flowC.on('start',function(db) {
 		if(req.session.poll_id) {
+			var poll_id = req.session.poll_id;
 			// Let's check whether the user is available
-			db.prepare('SELECT COUNT(*) AS count FROM VOTE v, CANDIDATE c WHERE v.voter_id = ? AND v.cand_id = c.cand_id AND c.poll_id = ?',req.session.voter_id,req.session.poll_id)
+			db.prepare('SELECT COUNT(*) AS count FROM VOTE v, CANDIDATE c WHERE v.voter_id = ? AND v.cand_id = c.cand_id AND c.poll_id = ?',req.session.voter_id,poll_id)
 				.get(function(err,row) {
 					if (err) throw err;
 					
@@ -25,10 +26,15 @@ exports.submission = function(req,res) {
 						flowC.emit('render',true);
 					} else {
 						var colours = {};
-						db.each('SELECT name, colour FROM VOTETYPE',function(err,row) {
+						db.each('SELECT vt.name, vt.colour, vv.score \
+							FROM VOTETYPE vt, VOTEVALUE vv \
+							WHERE vv.poll_id = ? \
+							AND vv.name = vt.name',
+							poll_id,function(err,row) {
+								
 							if (err) throw err;
 							
-							var theColour = {name: row.name, colour: row.colour};
+							var theColour = {name: row.name, colour: row.colour, score: row.score};
 							colours[row.name] = theColour;
 						},function(err,num) {
 							if(err)  throw err;
@@ -54,8 +60,11 @@ exports.submission = function(req,res) {
 							});
 							stmt.finalize(function(err) {
 								if(err)  throw err;
-									
-								flowC.emit('render',false);
+								
+								// Let's set the end mark for the vote
+								db.run('UPDATE POLL SET pollend = CURRENT_TIMESTAMP  WHERE poll_id = ? AND pollend IS NULL AND (SELECT COUNT(*) FROM VOTER vt LEFT JOIN VOTE v ON vt.poll_id = ? AND vt.voter_id = v.voter_id WHERE v.voter_id IS NULL) = 0',poll_id,poll_id,function(err) {
+									flowC.emit('render',false);
+								});
 							});
 						});
 					}
@@ -124,6 +133,7 @@ exports.vote = function(req, res){
 	
 	flowC.on('render', function(error,db) {
 		if(req.session.poll_id) {
+			var poll_id = req.session.poll_id;
 			var coloursArray = [];
 			var colours = {};
 			var rObj = {
@@ -131,17 +141,23 @@ exports.vote = function(req, res){
 				colours: colours,
 				coloursArray: coloursArray
 			};
-			db.each('SELECT name, colour FROM VOTETYPE',function(err,row) {
+			db.each('SELECT vt.name, vt.colour, vv.score \
+				FROM VOTETYPE vt, VOTEVALUE vv \
+				WHERE vv.poll_id = ? \
+				AND vv.name = vt.name \
+				ORDER BY 3 DESC',
+				poll_id,function(err,row) {
+					
 				if (err) throw err;
 				
-				var theColour = {name: row.name, colour: row.colour};
+				var theColour = {name: row.name, colour: row.colour, score: row.score};
 				coloursArray.push(theColour);
 				colours[row.name] = theColour;
 			},function(err,num) {
 				if(err)  throw err;
 				
 				// The title and description
-				db.prepare('SELECT title, description FROM POLL where poll_id = ?',req.session.poll_id)
+				db.prepare('SELECT title, description FROM POLL where poll_id = ?',poll_id)
 					.get(function(err,row) {
 						if(err) throw err;
 						
@@ -178,7 +194,7 @@ exports.vote = function(req, res){
 									AND p.id_mail = v.id_mail \
 									ORDER BY RANDOM()',
 									req.session.voter_id,
-									req.session.poll_id,
+									poll_id,
 									req.session.voter_id
 								,function(err,row) {
 									if(err) throw err;
