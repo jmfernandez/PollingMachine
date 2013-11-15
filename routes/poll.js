@@ -47,7 +47,7 @@ exports.results = function(req, res) {
 			})
 			.finalize(function(err) {
 				if('poll_id' in rObj) {
-					if(rObj.pollend) {
+					if(rObj.poll_end) {
 						db.all('SELECT c.cand_id, COALESCE(SUM(vv.score),0) AS score, c.title, c.description \
 							FROM CANDIDATE c LEFT JOIN VOTE v ON c.cand_id = v.cand_id LEFT JOIN VOTEVALUE vv ON v.vote = vv.name AND vv.poll_id = c.poll_id \
 							WHERE c.poll_id = ? \
@@ -97,7 +97,7 @@ exports.results = function(req, res) {
 							});
 							
 						});
-					} else if(rObj.pollstart) {
+					} else if(rObj.poll_start) {
 						res.render('pollNotFound',{ title: 'Poll still in progress',unknown_poll: poll_id });
 					} else {
 						res.render('pollNotFound',{ title: 'Poll has not started yet',unknown_poll: poll_id });
@@ -139,7 +139,7 @@ FROM VOTER vr JOIN PROPOSED_BY p ON vr.id_mail = p.id_mail LEFT JOIN VOTE v ON p
 WHERE vr.poll_id = 'maromos'
 GROUP BY 1,2
 */
-					if(rObj.pollend) {
+					if(rObj.poll_end) {
 						var winners = [];
 						rObj.winners = winners;
 						db.all('SELECT p.id_mail, SUM(s.score) AS score, p.name, p.surname \
@@ -161,7 +161,7 @@ GROUP BY 1,2
 							
 							res.render('pollWinners',rObj);
 						});
-					} else if(rObj.pollstart) {
+					} else if(rObj.poll_start) {
 						res.render('pollNotFound',{ title: 'Poll still in progress',unknown_poll: poll_id });
 					} else {
 						res.render('pollNotFound',{ title: 'Poll has not started yet',unknown_poll: poll_id });
