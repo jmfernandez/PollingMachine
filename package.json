@@ -2,6 +2,23 @@
 	"name": "poll-machine",
 	"description": "The Polling Machine",
 	"version": "0.2.0",
+	"author": "José M. Fernández",
+	"maintainers": [
+		{
+			"name": "jmfernandez"
+		}
+	],
+	"homepage": "https://github.com/jmfernandez/PollingMachine",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/jmfernandez/PollingMachine.git"
+	},
+	"licenses": [
+		{
+			"type": "AGPL3",
+			"url": "https://github.com/jmfernandez/PollingMachine/blob/master/LICENSE"
+		}	
+	],
 	"private": true,
 	"scripts": {
 		"start": "node app.js"
@@ -10,6 +27,8 @@
 		"express": "3.x",
 		"ejs": "*",
 		"stylus": "*",
-		"sqlite3": "2.x"
-	}
+		"sqlite3": "2.x",
+		"nodemailer": "*"
+	},
+	"engine": ["node >= 0.6"]
 }
