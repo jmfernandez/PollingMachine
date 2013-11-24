@@ -161,6 +161,7 @@ exports.vote = function(req, res){
 					.get(function(err,row) {
 						if(err) throw err;
 						
+						rObj.poll_id = poll_id;
 						rObj.poll_title = row.title;
 						rObj.poll_descr = row.description;
 					})
