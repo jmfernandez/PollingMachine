@@ -37,7 +37,7 @@ exports.results = function(req, res) {
 			.get(function(err,row) {
 				if(err) throw err;
 				
-				if('title' in row) {
+				if(row !== undefined) {
 					rObj.poll_id = poll_id;
 					rObj.poll_title = row.title;
 					rObj.poll_descr = row.description;
