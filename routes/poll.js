@@ -78,7 +78,8 @@ exports.results = function(req, res) {
 								db.all('SELECT vt.name, vt.colour, vv.score \
 									FROM VOTETYPE vt, VOTEVALUE vv \
 									WHERE vv.poll_id = ? \
-									AND vv.name = vt.name',poll_id, function(err, rows) {
+									AND vv.name = vt.name \
+									ORDER BY vv.isblind,vv.score DESC',poll_id, function(err, rows) {
 									
 									var coloursArray = [];
 									var colours = {};
@@ -141,25 +142,49 @@ GROUP BY 1,2
 */
 					if(rObj.poll_end) {
 						var winners = [];
+						var winnersHash = [];
 						rObj.winners = winners;
-						db.all('SELECT p.id_mail, SUM(s.score) AS score, p.name, p.surname \
-							FROM POLLUSER p, \
+						db.all('SELECT p.id_mail, MAX(s.score) AS score, p.name, p.surname \
+							FROM POLLUSER p, PROPOSED_BY pb, \
 							( \
-								SELECT vr.id_mail, p.cand_id, COALESCE(CAST(SUM(vv.score) AS REAL)/ (SELECT COUNT(*) FROM PROPOSED_BY pp WHERE pp.cand_id = p.cand_id),0) AS score \
-								FROM VOTER vr JOIN PROPOSED_BY p ON vr.id_mail = p.id_mail LEFT JOIN VOTE v ON p.cand_id = v.cand_id LEFT JOIN VOTEVALUE vv ON v.vote = vv.name \
-								WHERE vr.poll_id = ? \
-								GROUP BY 1,2 \
+								SELECT c.cand_id, COALESCE(SUM(vv.score),0) AS score, c.title, c.description \
+								FROM CANDIDATE c LEFT JOIN VOTE v ON c.cand_id = v.cand_id LEFT JOIN VOTEVALUE vv ON v.vote = vv.name AND vv.poll_id = c.poll_id \
+								WHERE c.poll_id = ? \
+								GROUP BY 1 \
 							) s \
-							WHERE p.id_mail = s.id_mail \
-							GROUP BY 1 \
+							WHERE p.id_mail = pb.id_mail \
+							AND s.cand_id = pb.cand_id \
+							GROUP BY p.id_mail \
 							ORDER BY 2 DESC',poll_id, function(err, rows) {
+								
 							if(err) throw err;
 								
 							rows.forEach(function(row) {
-								winners.push({id_mail:row.id_mail, name:row.name, surname: row.surname, score:row.score});
+								var win = {id_mail:row.id_mail, name:row.name, surname: row.surname, score:row.score};
+								winnersHash[win.id_mail] = win;
+								winners.push(win);
 							});
 							
-							res.render('pollWinners',rObj);
+							db.all('SELECT p.id_mail, SUM(s.score) AS score, p.name, p.surname \
+								FROM POLLUSER p, \
+								( \
+									SELECT vr.id_mail, p.cand_id, COALESCE(CAST(SUM(vv.score) AS REAL)/ (SELECT COUNT(*) FROM PROPOSED_BY pp WHERE pp.cand_id = p.cand_id),0) AS score \
+									FROM VOTER vr JOIN PROPOSED_BY p ON vr.id_mail = p.id_mail LEFT JOIN VOTE v ON p.cand_id = v.cand_id LEFT JOIN VOTEVALUE vv ON v.vote = vv.name AND NOT vv.isblind \
+									WHERE vr.poll_id = ? \
+									GROUP BY 1,2 \
+								) s \
+								WHERE p.id_mail = s.id_mail \
+								GROUP BY 1 \
+								ORDER BY 2 DESC',poll_id, function(err, rows) {
+								
+								if(err) throw err;
+								
+								rows.forEach(function(row) {
+									winnersHash[row.id_mail].oldScore = row.score;
+								});
+								
+								res.render('pollWinners',rObj);
+							});
 						});
 					} else if(rObj.poll_start) {
 						res.render('pollNotFound',{ title: 'Poll still in progress',unknown_poll: poll_id });

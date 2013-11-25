@@ -3,12 +3,13 @@
 	<head>
 		<title>Results from ballot <%= poll_title %></title>
 		<link rel='stylesheet' href='/stylesheets/style.css' />
+		<script src="/javascripts/fullscreen.js"></script>
 	</head>
 	<body>
 		<div align="center"><h1>Results of the ballot <%= poll_title %></h1>
 		<table>
 			<tr>
-				<td height="100"><img class="auto" src='/poll/<%= poll_id %>/image' /></td>
+				<td height="100"><img class="auto" src='/poll/<%= poll_id %>/image' onclick="if(fullscreenEnabled)  requestFullscreen(this)" /></td>
 				<td><h3><%= poll_descr %></h3></td>
 			</tr>
 		</table>
@@ -25,7 +26,7 @@
 			<% for(var rank_pos=0; rank_pos<ranking.length; rank_pos++ ) { %>
 			<% var cand = ranking[rank_pos] %>
 			<tr>
-				<td class="resultsCell"><img id="<%= cand.cand_id %>" class="auto" src='/candidate/<%= cand.cand_id %>/image' alt="<%= cand.title %>" title="<%= cand.description %>" /><br /><%= cand.title %></td>
+				<td class="resultsCell"><img id="<%= cand.cand_id %>" class="auto" src='/candidate/<%= cand.cand_id %>/image' alt="<%= cand.title %>" title="<%= cand.description %>" onclick="if(fullscreenEnabled)  requestFullscreen(this)" /><br /><%= cand.title %></td>
 				<% for (var i=0; i<coloursArray.length; i++) { %>
 					<td class="resultsCell" bgcolor="<%= coloursArray[i].colour %>"><%= (coloursArray[i].name in cand.votes)?cand.votes[coloursArray[i].name]:0 %></td>
 				<% } %>
