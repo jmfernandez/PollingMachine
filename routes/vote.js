@@ -29,7 +29,8 @@ exports.submission = function(req,res) {
 						db.each('SELECT vt.name, vt.colour, vv.score \
 							FROM VOTETYPE vt, VOTEVALUE vv \
 							WHERE vv.poll_id = ? \
-							AND vv.name = vt.name',
+							AND vv.name = vt.name \
+							AND NOT vv.isblind',
 							poll_id,function(err,row) {
 								
 							if (err) throw err;
@@ -62,7 +63,7 @@ exports.submission = function(req,res) {
 								if(err)  throw err;
 								
 								// Let's set the end mark for the vote
-								db.run('UPDATE POLL SET pollend = CURRENT_TIMESTAMP  WHERE poll_id = ? AND pollend IS NULL AND (SELECT COUNT(*) FROM VOTER vt LEFT JOIN VOTE v ON vt.poll_id = ? AND vt.voter_id = v.voter_id WHERE v.voter_id IS NULL) = 0',poll_id,poll_id,function(err) {
+								db.run('UPDATE POLL SET pollend = CURRENT_TIMESTAMP  WHERE poll_id = ? AND pollend IS NULL AND (SELECT COUNT(DISTINCT vt.id_mail) FROM VOTER vt LEFT JOIN VOTE v ON vt.voter_id = v.voter_id JOIN VOTEVALUE vv ON v.vote = vv.name AND NOT vv.isblind WHERE vt.poll_id = ? AND v.voter_id IS NULL) = 0',poll_id,poll_id,function(err) {
 									flowC.emit('render',false);
 								});
 							});
@@ -139,9 +140,10 @@ exports.vote = function(req, res){
 			var rObj = {
 				title: 'Welcome to the ballot!!!!',
 				colours: colours,
+				blindColour: null,
 				coloursArray: coloursArray
 			};
-			db.each('SELECT vt.name, vt.colour, vv.score \
+			db.each('SELECT vt.name, vt.colour, vv.score, vv.isblind \
 				FROM VOTETYPE vt, VOTEVALUE vv \
 				WHERE vv.poll_id = ? \
 				AND vv.name = vt.name \
@@ -151,8 +153,12 @@ exports.vote = function(req, res){
 				if (err) throw err;
 				
 				var theColour = {name: row.name, colour: row.colour, score: row.score};
-				coloursArray.push(theColour);
-				colours[row.name] = theColour;
+				if(row.isblind) {
+					rObj.blindColour = theColour;
+				} else {
+					coloursArray.push(theColour);
+					colours[row.name] = theColour;
+				}
 			},function(err,num) {
 				if(err)  throw err;
 				
@@ -187,7 +193,7 @@ exports.vote = function(req, res){
 								// The candidates
 								db.each(
 									'SELECT DISTINCT c.cand_id, c.title, c.description, vt.vote \
-									FROM VOTER v, PROPOSED_BY p, CANDIDATE c LEFT JOIN VOTE vt ON c.cand_id = vt.cand_id  AND vt.voter_id=? \
+									FROM VOTER v, PROPOSED_BY p, CANDIDATE c LEFT JOIN VOTE vt ON c.cand_id = vt.cand_id  AND vt.voter_id=? JOIN VOTEVALUE vv ON vt.vote = vv.name AND NOT vv.isblind \
 									WHERE v.poll_id = ? \
 									AND v.voter_id <> ? \
 									AND c.poll_id = v.poll_id \
@@ -200,9 +206,31 @@ exports.vote = function(req, res){
 								,function(err,row) {
 									if(err) throw err;
 									
-									cand.push({cand_id: row.cand_id, title: row.title, description: row.description, vote: row.vote});
+									var cand_elem = {cand_id: row.cand_id, title: row.title, description: row.description, vote: row.vote};
+									cand.push(cand_elem);
 								},function(err) {
-									res.render('vote', rObj);
+									var myCand = [];
+									rObj.myCand = myCand;
+									// MY candidates!
+									db.each('SELECT c.cand_id, c.title, c.description, vv.name \
+										FROM CANDIDATE c, VOTEVALUE vv, PROPOSED_BY p, VOTER v \
+										WHERE c.poll_id = ? \
+										AND vv.poll_id = c.poll_id \
+										AND vv.isblind \
+										AND c.cand_id = p.cand_id \
+										AND p.id_mail = v.id_mail \
+										AND v.poll_id = c.poll_id \
+										AND v.voter_id = ?',
+										poll_id,
+										req.session.voter_id
+									,function(err,row) {
+										if(err) throw err;
+										
+										var cand_elem = {cand_id: row.cand_id, title: row.title, description: row.description, vote: row.vote};
+										myCand.push(cand_elem);
+									},function(err) {
+										res.render('vote', rObj);
+									});
 								});
 							});
 					});

@@ -3,6 +3,7 @@
 	<head>
 		<title>Ballot <%= poll_title %></title>
 		<link rel='stylesheet' href='/stylesheets/style.css' />
+		<script src="/javascripts/fullscreen.js"></script>
 		<script>
 			var votes = {};
 			var votesLeft = <%= coloursArray.length %>;
@@ -71,9 +72,9 @@
 	<body>
 		<p style="text-align:center; font-style: italic; color:red; text-decoration: blink"><i>(sigue sin funcionar en Firefox, lo siento)</i></p>
 		<div style="text-align:center;clear:both;vertical-align:middle">
-		<div class="resultsCell" style="float:left"><img id="<%= voter_id_mail %>" class="auto" src='/user/<%= voter_id_mail %>/image' alt="<%= voter_name + ' ' + voter_surname %>" title="<%= voter_name + ' ' + voter_surname %>" /></div>
+		<div class="resultsCell" style="float:left"><img id="<%= voter_id_mail %>" class="auto" src='/user/<%= voter_id_mail %>/image' alt="<%= voter_name + ' ' + voter_surname %>" title="<%= voter_name + ' ' + voter_surname %>" onclick="if(fullscreenEnabled)  requestFullscreen(this)" /></div>
 		<h1 style="text-align:center;vertical-align:middle">Welcome to the ballot <%= poll_title %></h1>
-		<div class="resultsCell" style="clear:right;float:right;"><img class="auto" src='/poll/<%= poll_id %>/image' /></div>
+		<div class="resultsCell" style="clear:right;float:right;"><img class="auto" src='/poll/<%= poll_id %>/image' onclick="if(fullscreenEnabled)  requestFullscreen(this)" /></div>
 		</div>
 		<h3 style="clear:right"><%= poll_descr %></h3>
 		<% if(!voter_voted) { %>
@@ -97,21 +98,50 @@
 		</table>
 		</div>
 		<% } %>
-		<div align="center"><i>Los candidatos a votar (arrastrad hasta el voto)</i><br />
+		<div align="center"><i>Las propuestas a votar (arrastrad hasta el voto)</i><br />
 		<table>
-			<% for(var i=0; i<cand.length; i++) { %>
+			<% for(var i=0; i<cand.length ; i++) { %>
 				<% if(i % 4==0) { %>
 					<% if(i!=0) { %>
 						</tr>
 					<% } %>
 					<tr>
 				<% } %>
-				<td class="imgCell" bgcolor="<%= (cand[i].vote)?colours[cand[i].vote].colour:'' %>"><img id="<%= cand[i].cand_id %>" draggable="true" ondrop="false" ondragstart="drag(event,'<%= cand[i].cand_id %>')" class="auto" src='/candidate/<%= cand[i].cand_id %>/image' alt="<%= cand[i].title %>" title="<%= cand[i].description %>" /><br /><%= cand[i].title %></td>
+				<td class="imgCell" bgcolor="<%= (cand[i].vote)?colours[cand[i].vote].colour:'' %>"><img id="<%= cand[i].cand_id %>" onclick="if(fullscreenEnabled)  requestFullscreen(this)" draggable="true" ondrop="false" ondragstart="drag(event,'<%= cand[i].cand_id %>')" class="auto" src='/candidate/<%= cand[i].cand_id %>/image' alt="<%= cand[i].title %>" title="<%= cand[i].description %>" /><br /><%= cand[i].title %></td>
 			<% } %>
-			<% if(cand.length > 0) {%>
+			<% if(cand.length > 0) { %>
+				<% var leftCells = (4-(cand.length % 4) ) %>
+				<% if(leftCells!=4) { %>
+					<% for(var i=0; i < leftCells ; i++) { %>
+						<td class="imgCell" />
+					<% } %>
+				<% } %>
 				</tr>
 			<% } %>
 		</table>
+		<% if(myCand.length > 0)  { %>
+		<br />Tus propuestas<br />
+		<table>
+			<% for(var i=0; i<myCand.length ; i++) { %>
+				<% if(i % 4==0) { %>
+					<% if(i!=0) { %>
+						</tr>
+					<% } %>
+					<tr>
+				<% } %>
+				<td class="imgCell" bgcolor="<%= blindColour.colour %>"><img id="<%= myCand[i].cand_id %>" class="auto" onclick="if(fullscreenEnabled)  requestFullscreen(this)" src='/candidate/<%= myCand[i].cand_id %>/image?owner' alt="<%= myCand[i].title %>" title="<%= myCand[i].description %>" /><br /><%= myCand[i].title %></td>
+			<% } %>
+			<% if(myCand.length > 0) { %>
+				<% var leftCells = (4-(myCand.length % 4) ) %>
+				<% if(leftCells!=4) { %>
+					<% for(var i=0; i < leftCells ; i++) { %>
+						<td class="imgCell" />
+					<% } %>
+				<% } %>
+				</tr>
+			<% } %>
+		</table>
+		<% } %>
 		</div>
 		<% if(!voter_voted) { %>
 		</form>
